@@ -1,4 +1,14 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This is an example for uploading/downloading files using Next.js (app router), Prisma, and SQLite. 
+
+Highlights:
+- uses server components primarily
+- uses server actions for file upload and file deletion
+- for the delete button, I needed to listen to the click event. To provide this type of interactivity, it has to be a client component (note the 'use client' directive at the top of the Button.tsx file). I pass the server action to delete the file into the `Button` component as the `clickHandler` prop. 
+- I use a native HTML download link to fetch the file download from a route handler
+
+Caveats:
+- This project does not include auth. If you want to a user to login and save files that only they can view and retrieve, you will need to add a user ID to the file schema in prisma and then save and query files by user ID. 
+- This project does not do any error handling. You will want to catch errors from save or delete file actions and handle those (as in displaying a user friendly message). 
 
 ## Getting Started
 
