@@ -1,95 +1,56 @@
-import Image from "next/image";
+import prisma from "@/db/client";
 import styles from "./page.module.css";
+import { revalidatePath } from "next/cache";
+import Button from "@/components/button/Button";
 
-export default function Home() {
+
+export default async function Home() {
+
+  const files = await prisma.file_record.findMany();
+
+  async function saveFile(formData: FormData) {
+    'use server'
+    const file = formData.get('file') as File;
+    if(!file) throw new Error('No file provided');
+    const data = await file.arrayBuffer();
+    await prisma.file_record.create({
+      data: {
+        name: file.name,
+        binary: Buffer.from(data),
+        size: file.size,
+      }
+    })
+    revalidatePath('/');
+  }
+
+  async function deleteFileById(fileId: string) { 
+    'use server'
+    await prisma.file_record.delete({
+      where: { id: fileId }
+    });
+    revalidatePath('/');
+  }
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <>
+      <form className={styles.form} action={saveFile}>
+        <input name="file" type="file" />
+        <Button type="submit" text="Save" />
+      </form>
+      <section className={styles.fileSection}>
+        <h2>Files</h2>
+        {files.length === 0 ? <p>No files uploaded yet</p>:
+          <ul className={styles.list}>
+            {files.map((file) => (
+              <li key={file.id} className={styles.listItem}>
+                <span>{file.name} ({file.size} bytes)</span> 
+                <a className={styles.link} href={`/api/files/${file.id}`} download>Download</a>
+                <Button type="button" text="Delete" clickHandler={deleteFileById} clickHandlerCallbackParameter={file.id}/>
+              </li>
+            ))}
+          </ul>
+        }
+      </section>
+    </>
   );
 }

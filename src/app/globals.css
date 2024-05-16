@@ -105,3 +105,10 @@ a {
     color-scheme: dark;
   }
 }
+
+.warn-text {
+  color: red;
+}
+.warn-border {
+  border-color: red;
+}
